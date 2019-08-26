@@ -2,11 +2,11 @@ import random
 
 # backtracking to solve locosudoku (https://www.pleacher.com/mp/puzzles/mathpuz/moblosu.html)
 
-# horizontals
+# hs[i] <=> the set of numbers not in this horizontal
 hs = [{i for i in range(1,10)} for k in range(9)]
-# verticals
+# vs[i] <=> the set of numbers not in this vertical
 vs = [{j for j in range(1,10)} for k in range(9)]
-# 9x9 blocks
+# bs[i] the set of numbers not in this 9x9 block
 bs = [{b for b in range(1,10)} for k in range(9)]
 
 # map from board position to block
@@ -26,36 +26,25 @@ for i in range(9):
     for j in range(9):
         open_positions.append((i,j))
 
-# a stack of plays (position, number)
+# a stack of plays we've made
 plays = [] # (i,j,x)
-
-# for each position record what number has been previously played
-# at position i,j we try each possibility in increasing order. So
-# to determine if we've checked all possible plays at i,j we just
-# need to know if last_played[i][j] is greater than or equal to
-# max(possible_plays(i,j))
-last_played = []
-for i in range(9):
-    last_played.append([])
-    for j in range(9):
-        last_played[-1].append(-1) # -1 <=> no plays have been made
 
 def play(i,j,x,initial=False):
     hs[i].remove(x)
     vs[j].remove(x)
     bs[ij2b[i][j]].remove(x)
-    last_played[i][j] = x
     if not initial:
         plays.append((i,j,x))
     else:
         open_positions.remove((i,j))
 
-def undo_last():
+def backtrack(i,j):
+    open_positions.append((i,j))
     i,j,x = plays.pop()
-    hs[i].add(x)
-    vs[j].add(x)
     bs[ij2b[i][j]].add(x)
-    return i,j
+    vs[j].add(x)
+    hs[i].add(x)
+    return i,j,x
 
 # setup the board
 initial = {
@@ -88,36 +77,39 @@ for (i,j),p in initial.items():
     play(i,j,p,initial=True)
 
 def possible_plays(i,j):
-    return set(hs[i]).intersection(set(vs[j]), set(bs[ij2b[i][j]]))
+    return hs[i].intersection(vs[j], bs[ij2b[i][j]])
 
 def print_board():
+    play_map = {}
+    for play in plays:
+        play_map[play[:2]] = play[2]
     for i in range(9):
         for j in range(9):
             if (i,j) in initial:
                 print("{:>3}".format(initial[(i,j)]),end='')
             else:
-                print("{:>3}".format(last_played[i][j]),end='')
+                print("{:>3}".format(play_map[(i,j)]),end='')
         print()
 
 while True:
     if len(open_positions) > 0:
         i,j = open_positions.pop()
     else:
-        print('win')
+        print('solution:')
         print_board()
         exit(1)
     # find something to play
     can_play = possible_plays(i,j)
-    if len(can_play) == 0: # if we have made an incorrect play then backtrack
-        # put i,j back
-        open_positions.append((i,j))
-        i,j = undo_last()
+    if len(can_play) == 0: # if we have made an incorrect play
+        i,j,x = backtrack(i,j)
         can_play = possible_plays(i,j)
-        while last_played[i][j] >= max(can_play): # while we have exhausted all moves
-            last_played[i][j] = -1 # reset moves tried counter
-            open_positions.append((i,j))
-            i,j = undo_last()
+        while x == max(can_play): # possibly backtrack further
+            # moves are tried in order so if x is the largest possible
+            # move at this position then all moves have been exhausted
+            i,j,x = backtrack(i,j)
             can_play = possible_plays(i,j)
-    next = min(k for k in can_play if k > last_played[i][j])
+        next = min(k for k in can_play if k > x)
+    else:
+        next = min(can_play)
     play(i,j,next)
 
