@@ -20,7 +20,6 @@ ij2b = [[0,0,0,0,1,1,1,1,1],
         [7,7,7,8,8,8,6,6,6],
         [7,7,7,7,8,8,8,6,6]]
 
-# open positions
 open_positions = []
 for i in range(9):
     for j in range(9):
