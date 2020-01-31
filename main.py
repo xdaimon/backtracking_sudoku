@@ -28,14 +28,11 @@ for i in range(9):
 # a stack of plays we've made
 plays = [] # (i,j,x)
 
-def play(i,j,x,initial=False):
+def play(i,j,x):
     hs[i].remove(x)
     vs[j].remove(x)
     bs[ij2b[i][j]].remove(x)
-    if not initial:
-        plays.append((i,j,x))
-    else:
-        open_positions.remove((i,j))
+    plays.append((i,j,x))
 
 def backtrack(i,j):
     open_positions.append((i,j))
@@ -73,7 +70,9 @@ initial = {
 }
 
 for (i,j),p in initial.items():
-    play(i,j,p,initial=True)
+    play(i,j,p)
+    open_positions.remove((i,j))
+plays = []
 
 def possible_plays(i,j):
     return hs[i].intersection(vs[j], bs[ij2b[i][j]])
